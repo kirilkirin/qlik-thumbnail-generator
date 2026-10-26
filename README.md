@@ -4,7 +4,15 @@ A single HTML file that makes clean, consistent thumbnails for Qlik Sense apps, 
 
 Nothing to install, no account, no server. Everything runs in your browser and nothing you type leaves the page.
 
-## Get the tool
+## Use it
+
+**Open the live page: [kirilkirin.github.io/qlik-thumbnail-generator](https://kirilkirin.github.io/qlik-thumbnail-generator/)**
+
+That is all most people need. The page is always the current version.
+
+### Or keep a local copy
+
+If you prefer a file on your own computer:
 
 1. Open [`index.html`](https://github.com/kirilkirin/qlik-thumbnail-generator/blob/main/index.html) in this repository.
 2. Click the **download** icon (next to the **Raw** button, top right of the file view) and save the file anywhere.
