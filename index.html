@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qlik thumbnail generator v3</title>
+<title>Qlik thumbnail generator v4</title>
 <!--
   Qlik thumbnail generator — a single-file tool for making 8:5 thumbnails
   for Qlik Sense apps, sheets and stories (Qlik Cloud and Client-Managed).
 
-  Version 3 — icon picker dialog with tag search and a curated "Common" set.
+  Version 4 — icon picker grouped by Lucide's own categories (loaded live from
+  lucide.dev and Lucide's repository), tag search, library tracks the latest 1.x release.
 
-  Icons and search tags: Lucide (https://lucide.dev), loaded from a CDN at runtime.
+  Icons, tags and categories: Lucide (https://lucide.dev), loaded at runtime.
   Lucide is released under the ISC License:
     Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT).
     All other copyright (c) for Lucide are held by Lucide Contributors 2022.
@@ -203,8 +204,8 @@
 
   /* Icon picker dialog */
   dialog#picker {
-    width: min(1000px, 94vw);
-    height: min(760px, 90vh);
+    width: min(1120px, 96vw);
+    height: min(780px, 92vh);
     padding: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -223,18 +224,7 @@
     flex: none;
   }
   .picker-head input[type="search"] { flex: 1; max-width: 420px; }
-  .picker-tabs { display: flex; gap: 4px; padding: 3px; background: var(--bg); border-radius: var(--radius); }
-  .picker-tabs button {
-    height: 30px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    cursor: pointer;
-    font-weight: 500;
-    color: var(--muted);
-  }
-  .picker-tabs button[aria-selected="true"] { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .picker-count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
   .picker-close {
     margin-left: auto;
     width: 34px; height: 34px; padding: 0;
@@ -243,19 +233,62 @@
     display: grid; place-items: center;
   }
   .picker-close:hover { color: var(--text); border-color: var(--line-strong); }
-  .picker-grid {
-    flex: 1;
-    min-height: 0;
+  .picker-body { flex: 1; min-height: 0; display: flex; }
+  .picker-rail {
+    width: 210px;
+    flex: none;
     overflow-y: auto;
-    padding: 12px 16px;
+    border-right: 1px solid var(--line);
+    padding: 8px;
+  }
+  .picker-rail[hidden] { display: none; }
+  .picker-rail button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .picker-rail button span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .picker-rail button:hover { background: var(--bg); }
+  .picker-rail button[aria-current="true"] { background: var(--green-tint); color: var(--green); font-weight: 500; }
+  .picker-rail button[aria-current="true"] span { color: var(--green); }
+  .picker-scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 4px 16px 24px;
+    background: #FAFBFC;
+    position: relative;
+  }
+  .cat { padding-top: 14px; }
+  .cat h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cat h3 svg { width: 18px; height: 18px; color: var(--muted); }
+  .cat h3 span { color: var(--muted); font-weight: 400; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .cat-grid, .flat-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
     grid-auto-rows: 56px;
     gap: 6px;
     align-content: start;
-    background: #FAFBFC;
   }
-  .picker-grid button {
+  .flat-grid { padding-top: 12px; }
+  .picker-scroll button.ic {
     padding: 0;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -265,10 +298,10 @@
     place-items: center;
     color: var(--text);
   }
-  .picker-grid button svg { width: 26px; height: 26px; }
-  .picker-grid button:hover { background: #fff; border-color: var(--line-strong); }
-  .picker-grid button[aria-pressed="true"] { background: var(--green-tint); border-color: var(--green); color: var(--green); }
-  .picker-grid .notice { grid-column: 1 / -1; padding: 24px 12px; color: var(--muted); }
+  .picker-scroll button.ic svg { width: 26px; height: 26px; }
+  .picker-scroll button.ic:hover { background: #fff; border-color: var(--line-strong); }
+  .picker-scroll button.ic[aria-pressed="true"] { background: var(--green-tint); border-color: var(--green); color: var(--green); }
+  .picker-scroll .notice { padding: 24px 12px; color: var(--muted); }
   .picker-foot {
     display: flex;
     justify-content: space-between;
@@ -279,6 +312,9 @@
     font-size: 12px;
     flex: none;
     font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 700px) {
+    .picker-rail { width: 150px; }
   }
 
   /* Preview */
@@ -438,31 +474,31 @@
 <dialog id="picker" aria-label="Choose an icon">
   <div class="picker-head">
     <input type="search" id="iconSearch" placeholder="Search icons" autocomplete="off" aria-label="Search icons">
-    <div class="picker-tabs" role="tablist" aria-label="Icon sets">
-      <button type="button" role="tab" data-set="common" aria-selected="true">Common</button>
-      <button type="button" role="tab" data-set="all" aria-selected="false">All icons</button>
-    </div>
+    <span class="picker-count" id="iconStatus"></span>
     <button type="button" class="picker-close" id="pickerClose" aria-label="Close">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
     </button>
   </div>
-  <div class="picker-grid" id="iconGrid" role="listbox" aria-label="Icons"></div>
+  <div class="picker-body">
+    <nav class="picker-rail" id="rail" aria-label="Categories"></nav>
+    <div class="picker-scroll" id="gridWrap" role="listbox" aria-label="Icons"></div>
+  </div>
   <div class="picker-foot">
-    <span id="iconStatus"></span>
+    <span id="iconSource"></span>
     <span id="iconHover"></span>
   </div>
 </dialog>
 
 <footer>
-  Icons and search tags by <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC license). Text uses Inter. Nothing you type leaves this page.
+  Icons, tags and categories by <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC license). Text uses Inter. Nothing you type leaves this page.
 </footer>
 
 <script>
 (function () {
   // ---- Lucide loader with fallback CDN -------------------------------------------------
   var LUCIDE_URLS = [
-    'https://cdn.jsdelivr.net/npm/lucide@1.44.0/dist/umd/lucide.min.js',
-    'https://unpkg.com/lucide@1.44.0/dist/umd/lucide.min.js'
+    'https://cdn.jsdelivr.net/npm/lucide@1/dist/umd/lucide.min.js',
+    'https://unpkg.com/lucide@1/dist/umd/lucide.min.js'
   ];
   function loadLucide(i) {
     if (i >= LUCIDE_URLS.length) { window.__lucideFailed = true; if (window.__onLucide) window.__onLucide(); return; }
@@ -481,23 +517,22 @@
   'use strict';
 
   var FONT = 'Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-  var CHUNK = 300;                       // icons rendered per scroll chunk in the picker
+  var CHUNK = 300;                       // icons rendered per scroll chunk in search results
+  // Search tags: lucide.dev first, then the lucide-static package (same data, per release).
   var TAG_URLS = [
-    'https://cdn.jsdelivr.net/npm/lucide-static@1.44.0/tags.json',
-    'https://unpkg.com/lucide-static@1.44.0/tags.json'
+    'https://lucide.dev/api/tags',
+    'https://cdn.jsdelivr.net/npm/lucide-static@1/tags.json',
+    'https://unpkg.com/lucide-static@1/tags.json'
   ];
-  // Hand-picked set for dashboard thumbnails. Validated against the loaded library;
-  // any name that doesn't exist in this Lucide version is skipped.
-  var COMMON = [
-    'ChartColumn','ChartBar','ChartLine','ChartPie','ChartArea','ChartScatter','ChartNoAxesCombined','Gauge',
-    'TrendingUp','TrendingDown','Activity','Target',
-    'Database','Server','Table','FileSpreadsheet','Sheet','Layers','Cpu','Cloud','Network','Workflow','Bot',
-    'DollarSign','Banknote','Coins','Wallet','CreditCard','Receipt','Landmark','Percent','PiggyBank','Calculator',
-    'Users','User','Building2','Factory','Store','Briefcase','Handshake','Award',
-    'ShoppingCart','Package','Boxes','Truck','Ship','Plane','Warehouse','Globe','MapPin',
-    'Calendar','Clock','ClipboardList','ListChecks','CircleCheck','TriangleAlert','ShieldCheck','Settings',
-    'LayoutDashboard','Kanban','Lightbulb','Zap','HeartPulse','Stethoscope'
-  ];
+  // Category membership: { "icon-name": ["slug", ...] }
+  var CAT_URL = 'https://lucide.dev/api/categories';
+  // Category definitions (title, icon) from Lucide's repository, via CDN mirror then GitHub raw.
+  function catDefUrls(slug) {
+    return [
+      'https://cdn.jsdelivr.net/gh/lucide-icons/lucide@main/categories/' + slug + '.json',
+      'https://raw.githubusercontent.com/lucide-icons/lucide/main/categories/' + slug + '.json'
+    ];
+  }
 
   var state = {
     title: 'Sales Dashboard',
@@ -722,67 +757,157 @@
   }
 
   // ---- Icon picker ------------------------------------------------------------------
-  var picker = $('picker'), grid = $('iconGrid'), status = $('iconStatus'), hover = $('iconHover');
+  var picker = $('picker'), rail = $('rail'), scroller = $('gridWrap');
+  var status = $('iconStatus'), source = $('iconSource'), hover = $('iconHover');
   var search = $('iconSearch'), changeBtn = $('changeIcon');
+
   var TAGS = {};                 // normalised name -> "tag tag tag"
-  var commonList = [];           // subset of iconList
-  var activeSet = 'common';      // tab selected when the search box is empty
-  var visible = [], renderedCount = 0;
+  var byKey = {};                // normalised name -> icon entry {name, label, key}
+  var browseList = [];           // entries shown in the picker (categorised icons when available)
+  var CATS = null;               // [{slug, title, icon, items:[entry]}] sorted by slug; null = unavailable
+  var visible = [], renderedCount = 0;   // search results (flat, chunked)
+  var observer = null;
 
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 
   function iconButton(it) {
-    return '<button type="button" role="option" data-name="' + it.name + '" title="' + it.label +
-      '" aria-label="' + it.label + '" aria-pressed="' + (it.name === state.icon) + '">' + iconSvg(ICONS[it.name]) + '</button>';
+    return '<button type="button" class="ic" role="option" data-name="' + it.name + '" title="' + esc(it.label) +
+      '" aria-label="' + esc(it.label) + '" aria-pressed="' + (it.name === state.icon) + '">' + iconSvg(ICONS[it.name]) + '</button>';
+  }
+
+  // Exact tile-grid height for n icons at the current width, so unfilled sections keep
+  // the scroll position stable and rail jumps land on the right heading.
+  function gridHeight(n) {
+    var cols = Math.max(1, Math.floor((scroller.clientWidth - 32 + 6) / 62));
+    var rows = Math.ceil(n / cols);
+    return rows * 56 + Math.max(0, rows - 1) * 6;
+  }
+
+  // ---- Grouped view (categories) ----
+  function renderGroups() {
+    if (observer) { observer.disconnect(); observer = null; }
+    scroller.innerHTML = '';
+    if (!CATS) { renderFlat(browseList, 'A to Z'); return; }
+    rail.hidden = false;
+    rail.innerHTML = CATS.map(function (c) {
+      return '<button type="button" data-slug="' + c.slug + '" aria-current="false">' + esc(c.title) + '<span>' + c.items.length + '</span></button>';
+    }).join('');
+    scroller.innerHTML = CATS.map(function (c) {
+      var head = (c.icon && ICONS[c.icon]) ? iconSvg(ICONS[c.icon]) : '';
+      return '<section class="cat" data-slug="' + c.slug + '"><h3>' + head + esc(c.title) + '<span>' + c.items.length + '</span></h3>' +
+        '<div class="cat-grid" style="height:' + gridHeight(c.items.length) + 'px"></div></section>';
+    }).join('');
+    observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) fillSection(e.target); });
+    }, { root: scroller, rootMargin: '600px 0px' });
+    scroller.querySelectorAll('.cat').forEach(function (sec) { observer.observe(sec); });
+    status.textContent = browseList.length.toLocaleString() + ' icons in ' + CATS.length + ' categories';
+    updateRail();
+  }
+
+  function fillSection(sec) {
+    var grid = sec.querySelector('.cat-grid');
+    if (grid.dataset.filled) return;
+    var cat = CATS.filter(function (c) { return c.slug === sec.dataset.slug; })[0];
+    grid.innerHTML = cat.items.map(iconButton).join('');
+    grid.dataset.filled = '1';
+    if (observer) observer.unobserve(sec);
+  }
+
+  function relayout() {
+    if (!picker.open || !CATS || search.value.trim()) return;
+    scroller.querySelectorAll('.cat').forEach(function (sec) {
+      var cat = CATS.filter(function (c) { return c.slug === sec.dataset.slug; })[0];
+      sec.querySelector('.cat-grid').style.height = gridHeight(cat.items.length) + 'px';
+    });
+  }
+  window.addEventListener('resize', relayout);
+
+  var pinUntil = 0;   // after a rail jump, keep that category highlighted even if it can't reach the top
+  function jumpTo(slug) {
+    var sec = scroller.querySelector('.cat[data-slug="' + slug + '"]');
+    if (!sec) return;
+    fillSection(sec);
+    pinUntil = Date.now() + 500;
+    scroller.scrollTo({ top: sec.offsetTop - 4, behavior: 'auto' });
+    updateRail(slug);
+  }
+
+  function updateRail(forceSlug) {
+    if (!CATS || rail.hidden) return;
+    var slug = forceSlug;
+    if (!slug) {
+      var y = scroller.scrollTop + 60, current = CATS[0].slug;
+      scroller.querySelectorAll('.cat').forEach(function (sec) { if (sec.offsetTop <= y) current = sec.dataset.slug; });
+      slug = current;
+    }
+    rail.querySelectorAll('button').forEach(function (b) {
+      var on = b.dataset.slug === slug;
+      b.setAttribute('aria-current', String(on));
+      if (on && forceSlug === undefined) b.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  rail.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-slug]');
+    if (b) jumpTo(b.dataset.slug);
+  });
+
+  // ---- Flat view (search results, or everything when categories are unavailable) ----
+  function renderFlat(list, caption) {
+    rail.hidden = true;
+    visible = list;
+    renderedCount = 0;
+    scroller.innerHTML = '<div class="flat-grid" id="flatGrid"></div>';
+    scroller.scrollTop = 0;
+    appendChunk();
+    if (!list.length) {
+      scroller.innerHTML = '<div class="notice">No icons match "' + esc(search.value.trim()) + '".</div>';
+      status.textContent = '0 icons';
+    } else {
+      status.textContent = list.length.toLocaleString() + ' icons' + (caption ? ', ' + caption : '');
+    }
   }
 
   function appendChunk() {
-    if (renderedCount >= visible.length) return;
+    var grid = $('flatGrid');
+    if (!grid || renderedCount >= visible.length) return;
     var next = visible.slice(renderedCount, renderedCount + CHUNK);
     grid.insertAdjacentHTML('beforeend', next.map(iconButton).join(''));
     renderedCount += next.length;
   }
 
-  function currentMatches() {
-    var q = search.value.trim().toLowerCase();
-    if (!q) return activeSet === 'common' ? commonList : iconList;
-    var tokens = q.split(/[\s,]+/).filter(Boolean).map(function (t) { return t.replace(/-/g, ''); });
-    return iconList.filter(function (it) {
-      var hay = it.key + ' ' + it.label.replace(/-/g, ' ') + ' ' + (TAGS[it.key] || '');
-      var hayc = hay.replace(/[\s-]/g, '');
-      return tokens.every(function (t) { return hayc.indexOf(t) !== -1; });
+  function matches(q) {
+    var tokens = q.toLowerCase().split(/[\s,]+/).filter(Boolean).map(function (t) { return t.replace(/-/g, ''); });
+    return browseList.filter(function (it) {
+      var hay = (it.key + ' ' + it.label + ' ' + (TAGS[it.key] || '')).replace(/[\s-]/g, '');
+      return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
     });
   }
 
-  function renderGrid() {
+  function renderPicker() {
     if (!ICONS) return;
     var q = search.value.trim();
-    visible = currentMatches();
-    grid.innerHTML = '';
-    grid.scrollTop = 0;
-    renderedCount = 0;
-    appendChunk();
-    if (!visible.length) {
-      grid.innerHTML = '<div class="notice">No icons match "' + q.replace(/</g, '&lt;') + '".</div>';
-      status.textContent = '0 icons';
-    } else if (q) {
-      status.textContent = visible.length.toLocaleString() + ' of ' + iconList.length.toLocaleString() + ' icons match';
-    } else if (activeSet === 'common') {
-      status.textContent = commonList.length + ' common icons for dashboards. Search or switch to All icons for the full set.';
-    } else {
-      status.textContent = iconList.length.toLocaleString() + ' icons, A to Z';
-    }
+    if (q) renderFlat(matches(q), 'match');
+    else renderGroups();
   }
 
-  grid.addEventListener('scroll', function () {
-    if (grid.scrollTop + grid.clientHeight > grid.scrollHeight - 800) appendChunk();
+  var ticking = false;
+  scroller.addEventListener('scroll', function () {
+    if (search.value.trim()) {
+      if (scroller.scrollTop + scroller.clientHeight > scroller.scrollHeight - 800) appendChunk();
+      return;
+    }
+    if (Date.now() < pinUntil) return;
+    if (!ticking) { ticking = true; requestAnimationFrame(function () { updateRail(); ticking = false; }); }
   });
 
-  grid.addEventListener('mouseover', function (e) {
-    var b = e.target.closest('button[data-name]');
+  scroller.addEventListener('mouseover', function (e) {
+    var b = e.target.closest('button.ic');
     hover.textContent = b ? b.getAttribute('title') : '';
   });
-  grid.addEventListener('mouseleave', function () { hover.textContent = ''; });
+  scroller.addEventListener('mouseleave', function () { hover.textContent = ''; });
 
   function selectIcon(name) {
     state.icon = name;
@@ -790,45 +915,29 @@
     render();
   }
 
-  grid.addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-name]');
+  scroller.addEventListener('click', function (e) {
+    var b = e.target.closest('button.ic');
     if (!b) return;
     selectIcon(b.getAttribute('data-name'));
     picker.close();
   });
 
-  search.addEventListener('input', function () {
-    var q = search.value.trim();
-    setTab(q ? 'all' : activeSet, !!q);
-    renderGrid();
-  });
+  search.addEventListener('input', renderPicker);
   search.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && visible.length) { e.preventDefault(); selectIcon(visible[0].name); picker.close(); }
-  });
-
-  // Tabs. Typing a query shows the "All icons" tab as active (search covers everything)
-  // without changing the set that comes back when the box is cleared.
-  function setTab(set, transient) {
-    if (!transient) activeSet = set;
-    document.querySelectorAll('.picker-tabs button').forEach(function (b) {
-      b.setAttribute('aria-selected', String(b.getAttribute('data-set') === set));
-    });
-  }
-  document.querySelectorAll('.picker-tabs button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      search.value = '';
-      setTab(b.getAttribute('data-set'));
-      renderGrid();
-      search.focus();
-    });
+    if (e.key === 'Enter' && search.value.trim() && visible.length) { e.preventDefault(); selectIcon(visible[0].name); picker.close(); }
   });
 
   function openPicker() {
     if (!ICONS) return;
     search.value = '';
-    setTab(activeSet);
-    renderGrid();
     picker.showModal();
+    renderPicker();
+    // Open at the first category that contains the current icon.
+    if (CATS) {
+      var cur = byKey[norm(state.icon)];
+      var home = cur && CATS.filter(function (c) { return c.items.indexOf(cur) !== -1; })[0];
+      if (home) jumpTo(home.slug);
+    }
     search.focus();
   }
   changeBtn.addEventListener('click', openPicker);
@@ -838,23 +947,69 @@
 
   function updateCurrentIcon() {
     var node = ICONS && ICONS[state.icon];
+    var entry = byKey[norm(state.icon)];
     $('iconPreview').innerHTML = node ? iconSvg(node) : '';
-    $('iconName').textContent = node ? kebab(state.icon) : '';
+    $('iconName').textContent = node ? (entry ? entry.label : kebab(state.icon)) : '';
   }
 
-  function loadTags(i) {
+  // ---- Metadata loaders (all from Lucide) ----
+  function fetchJson(urls, i) {
     i = i || 0;
-    if (i >= TAG_URLS.length) { $('iconHint').textContent = 'Search by name'; return; }
-    fetch(TAG_URLS[i]).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (json) {
-        Object.keys(json).forEach(function (k) {
-          var v = json[k];
-          TAGS[norm(k)] = (Array.isArray(v) ? v : [v]).join(' ').toLowerCase();
+    if (i >= urls.length) return Promise.reject(new Error('unavailable'));
+    return fetch(urls[i]).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .catch(function () { return fetchJson(urls, i + 1); });
+  }
+
+  function loadTags() {
+    fetchJson(TAG_URLS).then(function (json) {
+      if (!json || typeof json !== 'object' || Array.isArray(json)) throw new Error('shape');
+      Object.keys(json).forEach(function (k) {
+        var v = json[k];
+        TAGS[norm(k)] = (Array.isArray(v) ? v : [v]).join(' ').toLowerCase();
+      });
+      $('iconHint').textContent = 'Search by name or meaning';
+    }).catch(function () { $('iconHint').textContent = 'Search by name'; });
+  }
+
+  function prettify(slug) { return slug.replace(/-/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); }); }
+
+  function loadCategories() {
+    source.textContent = 'Loading categories…';
+    fetchJson([CAT_URL]).then(function (json) {
+      if (!json || typeof json !== 'object' || Array.isArray(json)) throw new Error('shape');
+      var groups = {};
+      var seen = [];
+      Object.keys(json).forEach(function (kebabName) {
+        var entry = byKey[norm(kebabName)];
+        if (!entry) return;                              // not in the loaded library version
+        entry.label = kebabName;                         // use Lucide's own name
+        seen.push(entry);
+        (Array.isArray(json[kebabName]) ? json[kebabName] : []).forEach(function (slug) {
+          (groups[slug] = groups[slug] || []).push(entry);
         });
-        $('iconHint').textContent = 'Search by name or meaning';
-        if (picker.open) renderGrid();
-      })
-      .catch(function () { loadTags(i + 1); });
+      });
+      if (!seen.length) throw new Error('empty');
+      browseList = seen.sort(function (a, b) { return a.label < b.label ? -1 : 1; });
+      CATS = Object.keys(groups).sort().map(function (slug) {
+        return { slug: slug, title: prettify(slug), icon: null,
+                 items: groups[slug].sort(function (a, b) { return a.label < b.label ? -1 : 1; }) };
+      });
+      source.textContent = 'Categories from lucide.dev';
+      $('iconHint').textContent = browseList.length.toLocaleString() + ' icons in ' + CATS.length + ' categories';
+      updateCurrentIcon();
+      if (picker.open && !search.value.trim()) renderPicker();
+      // Titles and heading icons from Lucide's repository (best effort, per category).
+      return Promise.all(CATS.map(function (c) {
+        return fetchJson(catDefUrls(c.slug)).then(function (def) {
+          if (def && def.title) c.title = def.title;
+          if (def && def.icon) { var e = byKey[norm(def.icon)]; if (e) c.icon = e.name; }
+        }).catch(function () {});
+      })).then(function () { if (picker.open && !search.value.trim()) renderPicker(); });
+    }).catch(function () {
+      CATS = null;
+      source.textContent = 'Categories unavailable (lucide.dev not reachable) — showing all icons A to Z';
+      if (picker.open && !search.value.trim()) renderPicker();
+    });
   }
 
   function initIcons() {
@@ -870,15 +1025,15 @@
     ICONS = window.lucide.icons;
     iconList = Object.keys(ICONS).map(function (n) { return { name: n, label: kebab(n), key: norm(n) }; })
       .sort(function (a, b) { return a.label < b.label ? -1 : 1; });
-    commonList = COMMON.filter(function (n) { return !!ICONS[n]; })
-      .map(function (n) { return { name: n, label: kebab(n), key: norm(n) }; });
-    if (!commonList.length) { activeSet = 'all'; document.querySelector('.picker-tabs button[data-set=common]').hidden = true; }
-    if (!ICONS[state.icon]) state.icon = (commonList[0] || iconList[0]).name;
+    iconList.forEach(function (it) { byKey[it.key] = it; });
+    browseList = iconList;
+    if (!ICONS[state.icon]) state.icon = iconList[0].name;
     changeBtn.disabled = false;
     $('iconHint').textContent = iconList.length.toLocaleString() + ' icons available';
     updateCurrentIcon();
     render();
     loadTags();
+    loadCategories();
   }
   window.__onLucide = initIcons;
   initIcons();
